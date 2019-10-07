@@ -1,1 +1,1 @@
-# glo-linear-gradient
+# go-linear-gradient
