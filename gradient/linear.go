@@ -1,8 +1,17 @@
 package gradient
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"go/linear/gradient/cost"
+	"log"
+
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
+)
 
 func LinearGradient(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64, num_iters int) (mat.Matrix, error) {
+	pts := make(plotter.XYs, 0)
 	for i := 0; i < num_iters; i++ {
 
 		r, cx := X.Dims()
@@ -21,6 +30,40 @@ func LinearGradient(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64,
 
 		theta = RESULT
 
+		if i%20 == 0 {
+			f, e := cost.ComputeCost(X, y, theta)
+			if e != nil {
+				return nil, e
+			}
+			pts = append(pts, plotter.XY{
+				X: float64(i),
+				Y: f,
+			})
+		}
+
 	}
+	show(pts)
 	return theta, nil
+}
+
+func show(data plotter.XYs) {
+	p, err := plot.New()
+	if err != nil {
+		log.Panic(err)
+	}
+	p.Title.Text = "cost function Series"
+	p.Y.Label.Text = "cost function value)"
+	p.X.Label.Text = "number of iteration"
+	p.Add(plotter.NewGrid())
+
+	line, points, err := plotter.NewLinePoints(data)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	p.Add(line, points)
+	err = p.Save(10*vg.Centimeter, 5*vg.Centimeter, "cost.png")
+	if err != nil {
+		log.Panic(err)
+	}
 }

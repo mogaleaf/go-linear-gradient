@@ -50,7 +50,7 @@ func learn(fileName string) (mat.Matrix, mat.Matrix, mat.Matrix, error) {
 	}
 	XNorm, M, S, err := normalize.Normalize(X)
 
-	matrix, err := gradient.LinearGradient(XNorm, y, theta, 1.2, 100000)
+	matrix, err := gradient.LinearGradient(XNorm, y, theta, 1.2, 600)
 	if err != nil {
 		return nil, nil, nil, err
 	}
