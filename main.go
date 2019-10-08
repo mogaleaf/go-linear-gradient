@@ -18,17 +18,17 @@ func main() {
 	printCostFunction := flag.Bool("print_cost_function", true, "")
 	alpha := flag.Float64("alpha_value", 1.2, "")
 	iteration := flag.Int("iteration_number", 800, "")
-	readInteger := flag.Bool("use_integer", true, " if true read integer from data otherwise read float")
+	useFloat := flag.Bool("use_float", false, " if true read integer from data otherwise read float")
 
 	flag.Parse()
 
-	theta, M, S, err := learn.Learn(*trainingFile, *readInteger, *alpha, *iteration, *printCostFunction)
+	theta, M, S, err := learn.Learn(*trainingFile, !*useFloat, *alpha, *iteration, *printCostFunction)
 	if err != nil {
 		println(err.Error())
 		return
 	}
 
-	resultMat, lines, err := predict.Predict(*predictionFile, *readInteger, theta, M, S)
+	resultMat, lines, err := predict.Predict(*predictionFile, !*useFloat, theta, M, S)
 	if err != nil {
 		println(err.Error())
 		return
