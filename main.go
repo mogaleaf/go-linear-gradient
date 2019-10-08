@@ -14,11 +14,13 @@ import (
 func main() {
 	trainingFile := flag.String("training_file_path", "data.txt", "a training csv file ")
 	predictionFile := flag.String("prediction_file_path", "prediction.txt", "a prediction csv file")
-	resultFile := flag.String("result_file_path", "prediction_result.txt", "a prediction csv file")
+	resultFile := flag.String("result_file_path", "prediction_result.txt", "a result csv file")
 	printCostFunction := flag.Bool("print_cost_function", true, "")
 	alpha := flag.Float64("alpha_value", 1.2, "")
 	iteration := flag.Int("iteration_number", 800, "")
 	readInteger := flag.Bool("use_integer", true, " if true read integer from data otherwise read float")
+
+	flag.Parse()
 
 	theta, M, S, err := learn.Learn(*trainingFile, *readInteger, *alpha, *iteration, *printCostFunction)
 	if err != nil {
