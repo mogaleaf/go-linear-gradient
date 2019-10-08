@@ -10,7 +10,7 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-func LinearGradient(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64, num_iters int) (mat.Matrix, error) {
+func LinearGradient(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64, num_iters int, printCostFunction bool) (mat.Matrix, error) {
 	pts := make(plotter.XYs, 0)
 	for i := 0; i < num_iters; i++ {
 
@@ -30,7 +30,7 @@ func LinearGradient(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64,
 
 		theta = RESULT
 
-		if i%20 == 0 {
+		if printCostFunction && i%20 == 0 {
 			f, e := cost.ComputeCost(X, y, theta)
 			if e != nil {
 				return nil, e
