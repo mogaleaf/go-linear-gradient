@@ -2,13 +2,12 @@ package predict
 
 import (
 	"encoding/csv"
+	"go/linear/gradient/hypothesis"
 	"os"
 	"strconv"
-
-	"gonum.org/v1/gonum/mat"
 )
 
-func Predict(predictionFile string, readInteger bool, theta mat.Matrix, M mat.Matrix, S mat.Matrix) (mat.Matrix, [][]string, error) {
+func Predict(predictionFile string, theta []float64, M []float64, S []float64) ([]float64, [][]string, error) {
 	f, err := os.Open(predictionFile)
 	if err != nil {
 		return nil, nil, err
@@ -20,58 +19,29 @@ func Predict(predictionFile string, readInteger bool, theta mat.Matrix, M mat.Ma
 		return nil, nil, err
 	}
 
-	predictData := mat.NewDense(len(lines), len(lines[0])+1, nil)
+	predictData := make([][]float64, len(lines))
+
 	for i, line := range lines {
+		predictData[i] = make([]float64, len(line))
 		for j, data := range line {
-			var f float64
-			if readInteger {
-				rI, err := strconv.ParseInt(data, 10, 64)
-				if err != nil {
-					return nil, nil, err
-				}
-				f = float64(rI)
-			} else {
-				f, err = strconv.ParseFloat(data, 64)
-				if err != nil {
-					return nil, nil, err
-				}
-			}
+			f, err := strconv.ParseFloat(data, 64)
 			if err != nil {
 				return nil, nil, err
 			}
-			if j == 0 {
-				predictData.Set(i, 0, 1)
-			}
-			predictData.Set(i, j+1, f)
-
+			predictData[i][j] = f
 		}
 	}
-
-	predictData.Apply(func(i, j int, v float64) float64 {
-		if j == 0 {
-			return v
+	for i := 0; i < len(predictData); i++ {
+		for j := 0; j < len(predictData[i]); j++ {
+			predictData[i][j] = (predictData[i][j] - M[j]) / S[j]
 		}
-		return v - M.At(0, j-1)
-	}, predictData)
 
-	predictData.Apply(func(i, j int, v float64) float64 {
-		if j == 0 {
-			return v
-		}
-		return v / S.At(0, j-1)
-	}, predictData)
-
-	result, err := calcPredict(theta, predictData)
-	if err != nil {
-		return nil, nil, err
 	}
+
+	result := make([]float64, len(predictData))
+	for i := 0; i < len(predictData); i++ {
+		result[i] = hypothesis.ComputeHypothesis(predictData[i], theta)
+	}
+
 	return result, lines, err
-}
-
-func calcPredict(theta mat.Matrix, data mat.Matrix) (mat.Matrix, error) {
-	r, _ := data.Dims()
-	_, c := theta.Dims()
-	dense := mat.NewDense(c, r, nil)
-	dense.Mul(theta.T(), data.T())
-	return dense, nil
 }

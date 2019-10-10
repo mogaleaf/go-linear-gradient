@@ -10,4 +10,4 @@ result_file_path |	path of the result file
 print_cost_function | print png format of the cost function every 20 iterations
 alpha | value for alpha
 iteration | number of iteration to run
-use_float | data in integer (default) or float
+vectorized_version | use Matrices for vectorized version

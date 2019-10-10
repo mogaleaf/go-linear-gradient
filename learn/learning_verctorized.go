@@ -6,10 +6,12 @@ import (
 	"go/linear/gradient/normalize"
 	"os"
 	"strconv"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // Init Matrices with csv file input
-func Learn(fileName string, alpha float64, iteration int, printCostFunction bool) ([]float64, []float64, []float64, error) {
+func LearnVectorized(fileName string, alpha float64, iteration int, printCostFunction bool) (mat.Matrix, mat.Matrix, mat.Matrix, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
 		return nil, nil, nil, err
@@ -21,12 +23,11 @@ func Learn(fileName string, alpha float64, iteration int, printCostFunction bool
 		return nil, nil, nil, err
 	}
 
-	dataLoaded := make([][]float64, len(lines))
-	y := make([]float64, len(lines))
-	theta := make([]float64, len(lines[0]))
+	X := mat.NewDense(len(lines), len(lines[0]), nil)
+	y := mat.NewDense(len(lines), 1, nil)
+	theta := mat.NewDense(len(lines[0]), 1, nil)
 	// Loop through lines & turn into object
 	for i, line := range lines {
-		dataLoaded[i] = make([]float64, len(line)-1)
 		for j, data := range line {
 			f, err := strconv.ParseFloat(data, 64)
 			if err != nil {
@@ -37,9 +38,13 @@ func Learn(fileName string, alpha float64, iteration int, printCostFunction bool
 				return nil, nil, nil, err
 			}
 			if j < len(line)-1 {
-				dataLoaded[i][j] = f
+				// Already set first column to 1 for theta(0)
+				if j == 0 {
+					X.Set(i, 0, 1)
+				}
+				X.Set(i, j+1, f)
 			} else {
-				y[i] = f
+				y.Set(i, 0, f)
 			}
 
 		}
@@ -47,13 +52,12 @@ func Learn(fileName string, alpha float64, iteration int, printCostFunction bool
 	}
 
 	// NormalizeVectorized all the elements to keep an identical scale between different data
-	XNorm, M, S, err := normalize.Normalize(dataLoaded)
+	XNorm, M, S, err := normalize.NormalizeVectorized(X)
 
 	// Perform gradient descent to calculate Theta
-	THETA, err := gradient.LinearGradient(XNorm, y, theta, alpha, iteration, printCostFunction)
+	THETA, err := gradient.LinearGradientVectorized(XNorm, y, theta, alpha, iteration, printCostFunction)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
 	return THETA, M, S, nil
 }

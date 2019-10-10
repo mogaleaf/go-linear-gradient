@@ -15,34 +15,52 @@ func main() {
 	trainingFile := flag.String("training_file_path", "data.txt", "a training csv file ")
 	predictionFile := flag.String("prediction_file_path", "prediction.txt", "a prediction csv file")
 	resultFile := flag.String("result_file_path", "prediction_result.txt", "a result csv file")
-	printCostFunction := flag.Bool("print_cost_function", true, "")
-	alpha := flag.Float64("alpha_value", 1.2, "")
-	iteration := flag.Int("iteration_number", 800, "")
-	useFloat := flag.Bool("use_float", false, " if true read integer from data otherwise read float")
+	printCostFunction := flag.Bool("print_cost_function", false, "")
+	alpha := flag.Float64("alpha_value", 1.2, "gradient step")
+	iteration := flag.Int("iteration_number", 800, "training iteration")
+	vectorized := flag.Bool("vectorized_version", false, "")
 
 	flag.Parse()
 
-	theta, M, S, err := learn.Learn(*trainingFile, !*useFloat, *alpha, *iteration, *printCostFunction)
-	if err != nil {
-		println(err.Error())
-		return
-	}
+	if *vectorized {
+		theta, M, S, err := learn.LearnVectorized(*trainingFile, *alpha, *iteration, *printCostFunction)
+		if err != nil {
+			println(err.Error())
+			return
+		}
 
-	resultMat, lines, err := predict.Predict(*predictionFile, !*useFloat, theta, M, S)
-	if err != nil {
-		println(err.Error())
-		return
-	}
+		resultMat, lines, err := predict.PredictVectorized(*predictionFile, theta, M, S)
+		if err != nil {
+			println(err.Error())
+			return
+		}
 
-	err = writeData(resultMat, lines, *resultFile)
-	if err != nil {
-		println(err.Error())
-		return
+		err = writeDataVectorized(resultMat, lines, *resultFile)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+	} else {
+
+		theta, M, S, err := learn.Learn(*trainingFile, *alpha, *iteration, true)
+
+		resultMat, _, err := predict.Predict(*predictionFile, theta, M, S)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+
+		err = writeData(resultMat, *resultFile)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+
 	}
 
 }
 
-func writeData(resultMat mat.Matrix, lines [][]string, resultFile string) error {
+func writeDataVectorized(resultMat mat.Matrix, lines [][]string, resultFile string) error {
 	f, err := os.Create(resultFile)
 	if err != nil {
 		return err
@@ -56,6 +74,22 @@ func writeData(resultMat mat.Matrix, lines [][]string, resultFile string) error 
 			writer.Write(newLine)
 			println(fmt.Sprintf("prediction %s = %f", lines[j], resultMat.At(i, j)))
 		}
+
+	}
+	writer.Flush()
+	return nil
+}
+
+func writeData(result []float64, resultFile string) error {
+	f, err := os.Create(resultFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	writer := csv.NewWriter(f)
+	for i := 0; i < len(result); i++ {
+		writer.Write([]string{fmt.Sprintf("%0.10f", result[i])})
+		println(fmt.Sprintf("prediction %0.10f", result[i]))
 
 	}
 	writer.Flush()

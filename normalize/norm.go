@@ -1,43 +1,42 @@
 package normalize
 
 import (
+	"errors"
 	"math"
-
-	"gonum.org/v1/gonum/mat"
 )
 
-func Normalize(X mat.Matrix) (mat.Matrix, mat.Matrix, mat.Matrix, error) {
-	r, c := X.Dims()
-	N := mat.NewDense(r, c, nil)
-	S := mat.NewDense(1, c-1, nil)
-	M := mat.NewDense(1, c-1, nil)
+func Normalize(data [][]float64) ([][]float64, []float64, []float64, error) {
+	r := len(data)
+	c := len(data[0])
 
-	for j := 1; j < c; j++ {
+	minMax := make([]float64, c)
+	means := make([]float64, c)
+	dataNorm := make([][]float64, r)
+	for i := 0; i < r; i++ {
+		dataNorm[i] = make([]float64, c)
+	}
+	for j := 0; j < c; j++ {
 		var max float64
 		min := math.MaxFloat64
-		var sum float64
+		sum := 0.0
 		for i := 0; i < r; i++ {
-			if max < X.At(i, j) {
-				max = X.At(i, j)
+			if max < data[i][j] {
+				max = data[i][j]
 			}
-			if min > X.At(i, j) {
-				min = X.At(i, j)
+			if min > data[i][j] {
+				min = data[i][j]
 			}
-			sum += X.At(i, j)
+			sum += data[i][j]
 		}
-		mean := float64(sum / float64(r))
-		M.Set(0, j-1, mean)
-		s := max - min
-
-		S.Set(0, j-1, s)
-
+		means[j] = sum / float64(r)
+		minMax[j] = max - min
+		if minMax[j] == 0 {
+			return nil, nil, nil, errors.New("Min max should not be 0")
+		}
 		for i := 0; i < r; i++ {
-
-			N.Set(i, j, (X.At(i, j)-mean)/s)
+			dataNorm[i][j] = (data[i][j] - means[j]) / minMax[j]
 		}
 	}
-	for i := 0; i < r; i++ {
-		N.Set(i, 0, 1)
-	}
-	return N, M, S, nil
+
+	return dataNorm, means, minMax, nil
 }
