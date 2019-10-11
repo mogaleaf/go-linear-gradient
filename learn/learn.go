@@ -8,8 +8,9 @@ type Learn interface {
 }
 
 type LearnConfiguration struct {
-	FileName          string
-	Alpha             float64
-	NumberIteration   int
-	PrintCostFunction bool
+	TrainingFileName   string
+	PredictionFileName string
+	Alpha              float64
+	NumberIteration    int
+	PrintCostFunction  bool
 }

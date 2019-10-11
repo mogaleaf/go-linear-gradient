@@ -28,7 +28,7 @@ func NewlearnSlice() learn.Learn {
 // Init Slices with csv file input
 func (l *learnSlice) Learn(config learn.LearnConfiguration) (predict.Predict, error) {
 
-	inputs, y, err := loadFile(config.FileName)
+	inputs, y, err := loadFile(config.TrainingFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (l *learnSlice) Learn(config learn.LearnConfiguration) (predict.Predict, er
 		print2DimData(inputs, y, theta, M, S)
 	}
 
-	return slice.NewSlicePredict(theta, M, S), nil
+	return slice.NewSlicePredict(config.PredictionFileName, theta, M, S)
 }
 
 func loadFile(fileName string) ([][]float64, []float64, error) {

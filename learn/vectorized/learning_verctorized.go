@@ -23,7 +23,7 @@ func NewlearnVectorized() learn.Learn {
 // Init Matrices with csv file input
 func (s *learnVectorized) Learn(config learn.LearnConfiguration) (predict.Predict, error) {
 
-	X, y, err := loadFileVectorized(config.FileName)
+	X, y, err := loadFileVectorized(config.TrainingFileName)
 	_, c := X.Dims()
 	theta := mat.NewDense(c, 1, nil)
 
@@ -35,7 +35,7 @@ func (s *learnVectorized) Learn(config learn.LearnConfiguration) (predict.Predic
 	if err != nil {
 		return nil, err
 	}
-	return vectorized.NewPredictVectorized(THETA, M, S), nil
+	return vectorized.NewPredictVectorized(config.PredictionFileName, THETA, M, S)
 }
 
 func loadFileVectorized(fileName string) (mat.Matrix, mat.Matrix, error) {

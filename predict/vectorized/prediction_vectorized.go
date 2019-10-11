@@ -2,7 +2,6 @@ package vectorized
 
 import (
 	"encoding/csv"
-	"fmt"
 	"go/linear/gradient/hypothesis"
 	"go/linear/gradient/predict"
 	"os"
@@ -12,29 +11,67 @@ import (
 )
 
 type predictVectorized struct {
-	theta mat.Matrix
-	M     mat.Matrix
-	S     mat.Matrix
+	theta       mat.Matrix
+	M           mat.Matrix
+	S           mat.Matrix
+	predictData *mat.Dense
 }
 
-func NewPredictVectorized(theta mat.Matrix, M mat.Matrix, S mat.Matrix) predict.Predict {
-	return &predictVectorized{
-		S:     S,
-		M:     M,
-		theta: theta,
+func NewPredictVectorized(predictionfile string, theta mat.Matrix, M mat.Matrix, S mat.Matrix) (predict.Predict, error) {
+	matrix, err := initPredictData(predictionfile)
+	if err != nil {
+		return nil, err
 	}
+	return &predictVectorized{
+		S:           S,
+		M:           M,
+		theta:       theta,
+		predictData: matrix,
+	}, nil
 }
 
-func (p *predictVectorized) Predict(predictionFile string, resultFile string) error {
+func (p *predictVectorized) PredictLength() int {
+	r, _ := p.predictData.Dims()
+	return r
+}
+
+func (p *predictVectorized) Predict(resultData chan float64) {
+
+	// Normalize input
+	p.predictData.Apply(func(i, j int, v float64) float64 {
+		if j == 0 {
+			return v
+		}
+		return v - p.M.At(0, j-1)
+	}, p.predictData)
+
+	p.predictData.Apply(func(i, j int, v float64) float64 {
+		if j == 0 {
+			return v
+		}
+		return v / p.S.At(0, j-1)
+	}, p.predictData)
+
+	// Calc h(x)
+	result := hypothesis.ComputeHypothesisVectorized(p.theta, p.predictData)
+	r, _ := result.Dims()
+	for i := 0; i < r; i++ {
+		resultData <- result.At(i, 0)
+	}
+	close(resultData)
+
+}
+
+func initPredictData(predictionFile string) (*mat.Dense, error) {
 	f, err := os.Open(predictionFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
 	lines, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	predictData := mat.NewDense(len(lines), len(lines[0])+1, nil)
@@ -42,11 +79,11 @@ func (p *predictVectorized) Predict(predictionFile string, resultFile string) er
 		for j, data := range line {
 			f, err := strconv.ParseFloat(data, 64)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if j == 0 {
 				predictData.Set(i, 0, 1)
@@ -55,47 +92,5 @@ func (p *predictVectorized) Predict(predictionFile string, resultFile string) er
 
 		}
 	}
-
-	// Normalize input
-	predictData.Apply(func(i, j int, v float64) float64 {
-		if j == 0 {
-			return v
-		}
-		return v - p.M.At(0, j-1)
-	}, predictData)
-
-	predictData.Apply(func(i, j int, v float64) float64 {
-		if j == 0 {
-			return v
-		}
-		return v / p.S.At(0, j-1)
-	}, predictData)
-
-	// Calc h(x)
-	result, err := hypothesis.ComputeHypothesisVectorized(p.theta, predictData)
-	if err != nil {
-		return err
-	}
-
-	return writeDataVectorized(result, lines, resultFile)
-}
-
-func writeDataVectorized(resultMat mat.Matrix, lines [][]string, resultFile string) error {
-	f, err := os.Create(resultFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	writer := csv.NewWriter(f)
-	r, c := resultMat.Dims()
-	for i := 0; i < r; i++ {
-		for j := 0; j < c; j++ {
-			newLine := append(lines[j], fmt.Sprintf("%0.10f", resultMat.At(i, j)))
-			writer.Write(newLine)
-			println(fmt.Sprintf("prediction %s = %f", lines[j], resultMat.At(i, j)))
-		}
-
-	}
-	writer.Flush()
-	return nil
+	return predictData, nil
 }

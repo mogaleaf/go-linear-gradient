@@ -10,10 +10,10 @@ func ComputeHypothesis(x []float64, theta []float64) float64 {
 	return result
 }
 
-func ComputeHypothesisVectorized(theta mat.Matrix, data mat.Matrix) (mat.Matrix, error) {
+func ComputeHypothesisVectorized(theta mat.Matrix, data mat.Matrix) mat.Matrix {
 	r, _ := data.Dims()
 	_, c := theta.Dims()
 	dense := mat.NewDense(c, r, nil)
 	dense.Mul(theta.T(), data.T())
-	return dense, nil
+	return dense
 }

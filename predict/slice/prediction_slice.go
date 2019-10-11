@@ -2,7 +2,6 @@ package slice
 
 import (
 	"encoding/csv"
-	"fmt"
 	"go/linear/gradient/hypothesis"
 	"go/linear/gradient/predict"
 	"os"
@@ -10,29 +9,55 @@ import (
 )
 
 type predictSlice struct {
-	theta []float64
-	M     []float64
-	S     []float64
+	theta       []float64
+	M           []float64
+	S           []float64
+	predictData [][]float64
 }
 
-func NewSlicePredict(theta []float64, M []float64, S []float64) predict.Predict {
-	return &predictSlice{
-		theta: theta,
-		M:     M,
-		S:     S,
+func NewSlicePredict(predictionFile string, theta []float64, M []float64, S []float64) (predict.Predict, error) {
+	initPredictData, err := initPredictData(predictionFile)
+	if err != nil {
+		return nil, err
 	}
+	return &predictSlice{
+		theta:       theta,
+		M:           M,
+		S:           S,
+		predictData: initPredictData,
+	}, nil
 }
 
-func (p *predictSlice) Predict(predictionFile string, resultFile string) error {
+func (p *predictSlice) PredictLength() int {
+	return len(p.predictData)
+}
+
+func (p *predictSlice) Predict(resultData chan float64) {
+
+	//First normalize
+	for i := 0; i < len(p.predictData); i++ {
+		for j := 0; j < len(p.predictData[i]); j++ {
+			p.predictData[i][j] = (p.predictData[i][j] - p.M[j]) / p.S[j]
+		}
+
+	}
+
+	//Then give result
+	for i := 0; i < len(p.predictData); i++ {
+		resultData <- hypothesis.ComputeHypothesis(p.predictData[i], p.theta)
+	}
+	close(resultData)
+}
+
+func initPredictData(predictionFile string) ([][]float64, error) {
 	f, err := os.Open(predictionFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
-
 	lines, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	predictData := make([][]float64, len(lines))
@@ -42,43 +67,10 @@ func (p *predictSlice) Predict(predictionFile string, resultFile string) error {
 		for j, data := range line {
 			f, err := strconv.ParseFloat(data, 64)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			predictData[i][j] = f
 		}
 	}
-
-	//First normalize
-	for i := 0; i < len(predictData); i++ {
-		for j := 0; j < len(predictData[i]); j++ {
-			predictData[i][j] = (predictData[i][j] - p.M[j]) / p.S[j]
-		}
-
-	}
-
-	//Then give result
-	result := make([]float64, len(predictData))
-	for i := 0; i < len(predictData); i++ {
-		result[i] = hypothesis.ComputeHypothesis(predictData[i], p.theta)
-	}
-
-	err = writeData(result, resultFile)
-
-	return err
-}
-
-func writeData(result []float64, resultFile string) error {
-	f, err := os.Create(resultFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	writer := csv.NewWriter(f)
-	for i := 0; i < len(result); i++ {
-		writer.Write([]string{fmt.Sprintf("%0.10f", result[i])})
-		println(fmt.Sprintf("prediction %0.10f", result[i]))
-
-	}
-	writer.Flush()
-	return nil
+	return predictData, nil
 }
