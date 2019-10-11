@@ -10,6 +10,7 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
+//Linear Gradient using Matrices
 func LinearGradientVectorized(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alpha float64, num_iters int, printCostFunction bool) (mat.Matrix, error) {
 	pts := make(plotter.XYs, 0)
 	for i := 0; i < num_iters; i++ {
@@ -47,7 +48,9 @@ func LinearGradientVectorized(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alph
 		}
 
 	}
-	show(pts)
+	if printCostFunction {
+		show(pts)
+	}
 	return theta, nil
 }
 
