@@ -3,12 +3,26 @@ package gradient
 import (
 	"go/linear/gradient/cost"
 	"go/linear/gradient/hypothesis"
+	"log"
 
+	"golang.org/x/image/colornames"
+	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
 
 //Linear Gradient using slices
 func LinearGradient(data [][]float64, y []float64, theta []float64, alpha float64, num_iters int, printCostFunction bool) ([]float64, error) {
+
+	p, err := plot.New()
+	if err != nil {
+		log.Panic(err)
+	}
+	p.Title.Text = "Data point"
+	p.Y.Label.Text = "cost"
+	p.X.Label.Text = "size"
+	p.Add(plotter.NewGrid())
+
 	pts := make(plotter.XYs, 0)
 	for i := 0; i < num_iters; i++ {
 		//Number of training examples
@@ -38,11 +52,14 @@ func LinearGradient(data [][]float64, y []float64, theta []float64, alpha float6
 				X: float64(i),
 				Y: f,
 			})
+			if len(thetaTemp) == 2 {
+				print2DimData(theta, p)
+			}
 		}
 
 	}
 	if printCostFunction {
-		show(pts)
+		showCost(pts)
 	}
 	return theta, nil
 }
@@ -55,4 +72,30 @@ func computeSumRowI(x []float64, hi float64, yi float64) []float64 {
 		theta[i] = (hi - yi) * x[i-1]
 	}
 	return theta
+}
+
+func print2DimData(theta []float64, p *plot.Plot) {
+	pts2 := make(plotter.XYs, 2)
+	pts2[0] = plotter.XY{
+		X: 0,
+		Y: hypothesis.ComputeHypothesis([]float64{0}, theta),
+	}
+	pts2[1] = plotter.XY{
+		X: 2,
+		Y: hypothesis.ComputeHypothesis([]float64{2}, theta),
+	}
+	show(pts2, p)
+
+}
+
+func show(pts2 plotter.XYs, p *plot.Plot) {
+
+	line, _, err := plotter.NewLinePoints(pts2)
+	line.Color = colornames.Red
+	p.Add(line)
+
+	err = p.Save(10*vg.Centimeter, 5*vg.Centimeter, "size_cost_training.png")
+	if err != nil {
+		log.Panic(err)
+	}
 }

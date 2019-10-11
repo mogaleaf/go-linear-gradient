@@ -1,6 +1,8 @@
 package learn
 
-import "go/linear/gradient/predict"
+import (
+	"go/linear/gradient/predict"
+)
 
 // Learn a training file with alpha and number of iteration. Return object to predict an output.
 type Learn interface {

@@ -2,12 +2,9 @@ package gradient
 
 import (
 	"go/linear/gradient/cost"
-	"log"
 
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/vg"
 )
 
 //Linear Gradient using Matrices
@@ -49,29 +46,7 @@ func LinearGradientVectorized(X mat.Matrix, y mat.Matrix, theta mat.Matrix, alph
 
 	}
 	if printCostFunction {
-		show(pts)
+		showCost(pts)
 	}
 	return theta, nil
-}
-
-func show(data plotter.XYs) {
-	p, err := plot.New()
-	if err != nil {
-		log.Panic(err)
-	}
-	p.Title.Text = "cost function Series"
-	p.Y.Label.Text = "cost function value)"
-	p.X.Label.Text = "number of iteration"
-	p.Add(plotter.NewGrid())
-
-	line, points, err := plotter.NewLinePoints(data)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	p.Add(line, points)
-	err = p.Save(10*vg.Centimeter, 5*vg.Centimeter, "cost.png")
-	if err != nil {
-		log.Panic(err)
-	}
 }
